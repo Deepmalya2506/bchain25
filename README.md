@@ -1,4 +1,4 @@
-WorkSpace: RemixIDE
-Wallet: Metamask
-Network: Sepolia Testnet
+WorkSpace: RemixIDE || 
+Wallet: Metamask || 
+Network: Sepolia Testnet ||
 Blockchain: Ethereum
