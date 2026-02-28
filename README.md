@@ -7,6 +7,8 @@
 
 # **Task2Do - Ethereum Smart Contract Deployment**
 
+App : https://ethtask2do.netlify.app/
+
 > **v3.0** - Successfully deployed on Sepolia ETH testnet
 
 ## 📋 Overview
