@@ -580,7 +580,7 @@
             <!-- Features section (rustical cards) -->
             <h2
               style="font-size: 2.8rem; color: #c4864b; margin: 3rem 0 2rem; border-bottom: 5px solid #8b5a30; padding-bottom: 0.5rem;">
-               Why Task2Do?</h2>
+              Why Task2Do?</h2>
             <div class="grid-rust">
               <div class="card-rust">
                 <div class="card-icon">🔐</div>
@@ -605,7 +605,8 @@
               <div class="card-rust">
                 <div class="card-icon">⚡</div>
                 <div class="card-title">Instant Confirmations</div>
-                <div class="card-desc">Local Ganache support — fast & feeless in dev.</div>
+                <div class="card-desc">Local Ganache support — fast & feeless in dev & Deployed over Sepolia testnet.
+                </div>
               </div>
               <div class="card-rust">
                 <div class="card-icon">✨</div>
@@ -619,12 +620,12 @@
             <div class="tech-stack">
 
               <div class="tech-pill">
-                <img src="https://cryptologos.cc/logos/ethereum-eth-logo.png" class="tech-logo">
+                <img src="https://not-lain-background-removal.hf.space/gradio_api/file=/tmp/gradio/78658d854db2e1346dbc1adc8f6af67833a356ec7159a75524e3c8a8bc1a4ab0/image.png" class="tech-logo">
                 Solidity
               </div>
 
               <div class="tech-pill">
-                <img src="https://cryptologos.cc/logos/ethereum-eth-logo.png" class="tech-logo">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/6/6f/Ethereum-icon-purple.svg" class="tech-logo">
                 Ethereum
               </div>
 
@@ -707,16 +708,16 @@
 
       // Override navigation to properly show/hide pages
       window.App = window.App || {};
-      
+
       window.App.goToApp = async function () {
         console.log('🚀 Navigating to app...');
-        
+
         // Add class to body to show app page
         document.body.classList.add('showing-app');
-        
+
         // Scroll to top
         window.scrollTo(0, 0);
-        
+
         // Initialize app if not already initialized
         if (!window.App.account) {
           console.log('📱 Account not found, loading...');
@@ -729,10 +730,10 @@
 
       window.App.goToLanding = function () {
         console.log('🏠 Navigating to landing...');
-        
+
         // Remove class to show landing page
         document.body.classList.remove('showing-app');
-        
+
         // Scroll to top
         window.scrollTo(0, 0);
       };
@@ -741,13 +742,13 @@
       document.addEventListener('DOMContentLoaded', function () {
         const brandHome = document.getElementById('brandHome');
         const homeLink = document.getElementById('homeLink');
-        
+
         if (brandHome) {
           brandHome.addEventListener('click', function () {
             window.App.goToLanding();
           });
         }
-        
+
         if (homeLink) {
           homeLink.addEventListener('click', function () {
             window.App.goToLanding();
