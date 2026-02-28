@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Task2Do · Decentralized ToDo App</title>
+
+  <!-- External Libraries -->
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/web3@1.10.0/dist/web3.min.js"></script>
+  <!-- Font Awesome 6 -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+
+  <style>
+    /* ----- RESET / VARIABLES (inspired by the rustical screenshot) ----- */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --bg-dark: #0b0710;
+      --bg-panel: #14101c;
+      --orange-rust: #f97316;
+      --orange-bright: #fb923c;
+      --orange-deep: #c2410c;
+      --accent-glow: #f97316;
+      --card-bg: #1e1a2b;
+      --card-border: #3e2c1f;
+      --text-light: #f5e7d9;
+      --text-muted: #bc9e82;
+      --stat-bg: #2a1f15;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      background-image:
+        radial-gradient(circle at 10% 20%, rgba(249, 115, 22, 0.08) 0%, transparent 30%),
+        radial-gradient(circle at 90% 70%, rgba(249, 115, 22, 0.06) 0%, transparent 40%),
+        repeating-linear-gradient(45deg, rgba(40, 30, 20, 0.4) 0px, rgba(40, 30, 20, 0.4) 2px, transparent 2px, transparent 8px);
+      color: var(--text-light);
+      font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      min-height: 100vh;
+      position: relative;
+      line-height: 1.5;
+    }
+
+    /* ----- main layout: mimic monitor + rustic plate ----- */
+    .rustic-wrapper {
+      max-width: 1300px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem 4rem;
+    }
+
+    /* top branding — exactly as screenshot: RUSTICAL.COM / Great design ... */
+    .top-brand {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      flex-wrap: wrap;
+      margin-bottom: 2rem;
+      border-bottom: 2px solid #3b2a1c;
+      padding-bottom: 1rem;
+    }
+
+    .rustical-logo {
+      font-size: 2.2rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      background: linear-gradient(135deg, #fcd34d, #f97316);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-shadow: 0 0 12px #f9731670;
+    }
+
+    .rustical-logo span {
+      font-size: 1.2rem;
+      font-weight: 400;
+      background: none;
+      -webkit-text-fill-color: #b68b6e;
+      text-transform: none;
+      letter-spacing: 1px;
+      margin-left: 8px;
+    }
+
+    .ad-tagline {
+      display: flex;
+      gap: 2rem;
+      color: #d4a373;
+      font-weight: 500;
+      font-size: 1.1rem;
+    }
+
+    .ad-tagline i {
+      color: var(--orange-rust);
+      margin-right: 6px;
+    }
+
+    /* three stat panels (40K, 15+, 24/7) */
+    .stat-blocks {
+      display: flex;
+      gap: 2.5rem;
+      background: rgba(0, 0, 0, 0.35);
+      padding: 0.6rem 1.8rem;
+      border-radius: 60px;
+      border: 1px solid #6b4f36;
+      backdrop-filter: blur(6px);
+    }
+
+    .stat-item {
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: var(--orange-bright);
+    }
+
+    .stat-item small {
+      font-size: 0.9rem;
+      font-weight: 400;
+      color: #b48b65;
+      margin-left: 4px;
+    }
+
+    /* main monitor panel — rough iron frame */
+    .monitor-frame {
+      background: #281f14;
+      /* dark wood/metal */
+      padding: 18px;
+      border-radius: 42px 42px 24px 24px;
+      box-shadow:
+        0 20px 35px -8px black,
+        inset 0 -2px 5px #4a3a2a,
+        inset 0 2px 8px #5f4d37;
+      border: 2px solid #6a4e32;
+    }
+
+    .inner-crt {
+      background: #151010;
+      border-radius: 28px 28px 16px 16px;
+      padding: 14px;
+      border: 1px solid #b77f4b;
+      box-shadow: inset 0 0 30px #2d1e10;
+    }
+
+    /* glass screen with scanline effect */
+    .screen {
+      background: #1c1712;
+      border-radius: 20px;
+      padding: 2rem 2.2rem;
+      border: 1px solid #c59a6b;
+      box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.8), 0 0 30px #f9731610;
+      position: relative;
+      backdrop-filter: blur(2px);
+      color: #f0dbc0;
+      min-height: 70vh;
+    }
+
+    .screen::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: repeating-linear-gradient(0deg, rgba(255, 140, 0, 0.02) 0px, rgba(0, 0, 0, 0.1) 2px, transparent 3px, transparent 6px);
+      pointer-events: none;
+      border-radius: 20px;
+    }
+
+    /* navigation inside screen (like old terminal) */
+    .nav-rustic {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 2px solid #b37b4b;
+      padding-bottom: 1rem;
+      margin-bottom: 2rem;
+      flex-wrap: wrap;
+    }
+
+    .logo-small {
+      font-size: 2rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      background: linear-gradient(135deg, #fbbf24, #f97316);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      letter-spacing: 1px;
+    }
+
+    .wallet-badge {
+      background: #2a1f15;
+      border: 2px solid #ad6d3d;
+      border-radius: 40px;
+      padding: 0.5rem 1.3rem;
+      font-weight: 600;
+      color: #ffb980;
+      box-shadow: 0 0 12px #f9731660;
+      font-size: 0.95rem;
+    }
+
+    /* landing specific rustic styling */
+    .hero-rustic {
+      text-align: center;
+      margin: 3rem 0 5rem;
+    }
+
+    .hero-title {
+      font-size: 6rem;
+      font-weight: 900;
+      text-transform: uppercase;
+      color: #d98d4c;
+      text-shadow: 6px 6px 0 #5f2f0e, 10px 10px 20px black;
+      letter-spacing: 4px;
+      line-height: 1;
+    }
+
+    .hero-sub {
+      font-size: 2rem;
+      color: #deb887;
+      background: #2b1d12b3;
+      display: inline-block;
+      padding: 0.4rem 2.5rem;
+      border-radius: 40px;
+      border: 1px solid #ffa553;
+      backdrop-filter: blur(4px);
+      margin: 1rem 0 1.2rem;
+    }
+
+    .hero-desc {
+      max-width: 800px;
+      margin: 1.5rem auto;
+      font-size: 1.2rem;
+      color: #cbb293;
+    }
+
+    .btn-rust {
+      background: #f97316;
+      border: none;
+      color: #0f0a06;
+      font-weight: 800;
+      padding: 0.9rem 2.6rem;
+      border-radius: 100px;
+      font-size: 1.4rem;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      box-shadow: 0 5px 0 #9b4b1b, 0 10px 25px black;
+      transition: 0.1s ease;
+      cursor: pointer;
+      border: 1px solid #ffbc7a;
+    }
+
+    .btn-rust:hover {
+      transform: translateY(2px);
+      box-shadow: 0 3px 0 #9b4b1b, 0 10px 25px black;
+    }
+
+    /* feature grid with brutalist cards */
+    .grid-rust {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 2rem;
+      margin: 4rem 0;
+    }
+
+    .card-rust {
+      background: #241f18;
+      border: 3px solid #a56931;
+      padding: 2rem 1.5rem;
+      box-shadow: 8px 8px 0 #4d2e17;
+      transition: 0.2s;
+    }
+
+    .card-rust:hover {
+      transform: translate(-3px, -3px);
+      box-shadow: 12px 12px 0 #4d2e17;
+    }
+
+    .card-icon {
+      font-size: 3.5rem;
+      color: #f97316;
+      filter: drop-shadow(2px 2px 0 #9b4b1b);
+      margin-bottom: 1rem;
+    }
+
+    .card-title {
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: #ffb26b;
+      border-bottom: 2px dashed #a9581c;
+      margin-bottom: 1rem;
+      padding-bottom: 0.5rem;
+    }
+
+    .card-desc {
+      color: #bb9d82;
+      font-weight: 500;
+    }
+
+    .tech-stack {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1.5rem;
+      justify-content: center;
+      margin: 3rem 0;
+    }
+
+    .tech-pill {
+      background: #261e14;
+      border: 2px solid #b96f33;
+      border-radius: 60px;
+      padding: 0.7rem 1.8rem;
+      font-size: 1.2rem;
+      font-weight: 600;
+      color: #f3b27a;
+      box-shadow: 0 4px 0 #61381b;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .tech-pill i {
+      margin-right: 0;
+      color: orange;
+    }
+
+    .tech-logo {
+      width: 26px;
+      height: 26px;
+      object-fit: contain;
+    }
+
+    /* ===== PAGE VISIBILITY CONTROLS ===== */
+    /* By default: show landing, hide app */
+    #landing-page {
+      display: block;
+      opacity: 1;
+      transition: opacity 0.3s ease;
+    }
+
+    #app-page {
+      display: none;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    /* When class 'showing-app' is on body, swap visibility */
+    body.showing-app #landing-page {
+      display: none;
+      opacity: 0;
+    }
+
+    body.showing-app #app-page {
+      display: block;
+      opacity: 1;
+    }
+
+    .app-panel {
+      background: #201b15e0;
+      backdrop-filter: blur(10px);
+      border: 4px solid #9b6d44;
+      padding: 2rem;
+      border-radius: 32px;
+    }
+
+    .form-block {
+      background: #2e241d;
+      padding: 2rem;
+      border: 2px solid #b87b48;
+      margin-bottom: 2.5rem;
+    }
+
+    .form-label {
+      font-size: 1.8rem;
+      color: #fbb36b;
+      text-transform: uppercase;
+      font-weight: 600;
+      letter-spacing: 2px;
+    }
+
+    .input-group {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 1rem;
+    }
+
+    .input-group input {
+      flex: 1;
+      background: #362c21;
+      border: 2px solid #a57042;
+      padding: 1rem 1.5rem;
+      font-size: 1.2rem;
+      color: #ffe6cc;
+      border-radius: 60px;
+    }
+
+    .input-group input::placeholder {
+      color: #9d7d60;
+    }
+
+    .btn-create {
+      background: #f97316;
+      border: none;
+      color: #1f130a;
+      font-weight: 800;
+      padding: 0 2.5rem;
+      border-radius: 60px;
+      font-size: 1.2rem;
+      border: 2px solid #faa75e;
+      box-shadow: 0 4px 0 #9b4b1b;
+      cursor: pointer;
+      transition: 0.1s ease;
+    }
+
+    .btn-create:hover {
+      transform: translateY(2px);
+    }
+
+    .tasks-section-title {
+      font-size: 2rem;
+      font-weight: 700;
+      color: #e39c5c;
+      margin: 2rem 0 1rem;
+      border-left: 10px solid #f97316;
+      padding-left: 1rem;
+    }
+
+    .tasks-list {
+      background: #1e1712;
+      border: 2px solid #b17840;
+      min-height: 150px;
+      padding: 1.5rem;
+      border-radius: 24px;
+      margin-bottom: 2rem;
+    }
+
+    .task-item {
+      display: flex;
+      align-items: center;
+      background: #2f271f;
+      border: 2px solid #c28957;
+      padding: 0.8rem 1.5rem;
+      margin-bottom: 1rem;
+      border-radius: 50px;
+    }
+
+    .task-item.completed {
+      background: #2a241f;
+      border-color: #8b6f4a;
+    }
+
+    .task-item.completed .task-content {
+      text-decoration: line-through;
+      color: #9d7d60;
+    }
+
+    .task-checkbox {
+      margin-right: 1.2rem;
+      transform: scale(1.4);
+      accent-color: #f97316;
+      cursor: pointer;
+    }
+
+    .task-content {
+      flex: 1;
+      color: #f0dbc0;
+      font-size: 1.1rem;
+    }
+
+    .empty-state {
+      text-align: center;
+      color: #a7866b;
+      font-size: 1.2rem;
+      padding: 2rem;
+    }
+
+    #loader {
+      text-align: center;
+      padding: 3rem;
+    }
+
+    .spinner {
+      width: 60px;
+      height: 60px;
+      border: 6px solid #75563b;
+      border-top-color: #f97316;
+      border-radius: 50%;
+      animation: spin 1s infinite linear;
+      margin: 0 auto 1rem;
+    }
+
+    .loader-text {
+      color: #ffb980;
+      font-size: 1.2rem;
+      font-weight: 600;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    /* responsive tweaks */
+    @media (max-width: 900px) {
+      .hero-title {
+        font-size: 3.5rem;
+      }
+
+      .top-brand {
+        flex-direction: column;
+        gap: 1rem;
+      }
+
+      .nav-rustic {
+        flex-direction: column;
+        gap: 1rem;
+      }
+
+      .logo-small {
+        font-size: 1.5rem;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- floating rustical ornaments (like in screenshot) -->
+  <div style="position: fixed; top: 12%; left: 3%; font-size: 4rem; opacity: 0.15; rotate: -10deg;">⛏️</div>
+  <div style="position: fixed; bottom: 8%; right: 2%; font-size: 5rem; opacity: 0.2; rotate: 15deg;">🛡️</div>
+  <div style="position: fixed; top: 40%; right: 6%; font-size: 4rem; opacity: 0.12;">⚔️</div>
+
+  <div class="rustic-wrapper">
+    <!-- header exactly as rustical.com mock -->
+    <div class="top-brand">
+      <div class="rustical-logo" id="brandHome" style="cursor:pointer;">
+        Task2Do <span>The To_Do dapp</span>
+      </div>
+      <div class="ad-tagline">
+        <span><i class="fa-regular fa-bell"></i> Trigger notifications for </span>
+        <div class="stat-blocks">
+          <span class="stat-item">40K <small>Update</small></span>
+          <span class="stat-item">15+ <small></small></span>
+          <span class="stat-item">24/7 <small></small></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- main monitor frame (heavy metal) -->
+    <div class="monitor-frame">
+      <div class="inner-crt">
+        <div class="screen">
+          <!-- nav inside screen -->
+          <div class="nav-rustic">
+            <div class="logo-small" id="homeLink" style="cursor:pointer;">Task2Do</div>
+
+            <button class="wallet-badge" id="connectBtn" onclick="App.connectWallet()">
+              Connect MetaMask
+            </button>
+
+            <div class="wallet-badge" id="account" style="display:none;"></div>
+          </div>
+
+          <!-- ====== LANDING PAGE (shown by default) ====== -->
+          <div id="landing-page">
+            <div class="hero-rustic">
+              <h1 class="hero-title">Task2Do</h1>
+              <div class="hero-sub">Decentralized Task Management on Ethereum</div>
+              <p class="hero-desc">
+                Forge your productivity on the blockchain — permanent, transparent,<br>
+                and totally yours. No gods, no masters, only smart contracts.
+              </p>
+              <button class="btn-rust" onclick="App.goToApp()"><i class="fa-regular fa-play"></i> Launch App</button>
+            </div>
+
+            <!-- Features section (rustical cards) -->
+            <h2
+              style="font-size: 2.8rem; color: #c4864b; margin: 3rem 0 2rem; border-bottom: 5px solid #8b5a30; padding-bottom: 0.5rem;">
+               Why Task2Do?</h2>
+            <div class="grid-rust">
+              <div class="card-rust">
+                <div class="card-icon">🔐</div>
+                <div class="card-title">Decentralized</div>
+                <div class="card-desc">No central server. Tasks live forever on-chain.</div>
+              </div>
+              <div class="card-rust">
+                <div class="card-icon">⛓️</div>
+                <div class="card-title">Immutable</div>
+                <div class="card-desc">Every action is recorded permanently — tamper-proof.</div>
+              </div>
+              <div class="card-rust">
+                <div class="card-icon">🌐</div>
+                <div class="card-title">Global Access</div>
+                <div class="card-desc">Open tasks anywhere with a Web3 wallet.</div>
+              </div>
+              <div class="card-rust">
+                <div class="card-icon">🔑</div>
+                <div class="card-title">Self-Custodial</div>
+                <div class="card-desc">You own your keys. No third party can touch your data.</div>
+              </div>
+              <div class="card-rust">
+                <div class="card-icon">⚡</div>
+                <div class="card-title">Instant Confirmations</div>
+                <div class="card-desc">Local Ganache support — fast & feeless in dev.</div>
+              </div>
+              <div class="card-rust">
+                <div class="card-icon">✨</div>
+                <div class="card-title">Minimal UI</div>
+                <div class="card-desc">Rustical glass & steel — DApps can look rugged.</div>
+              </div>
+            </div>
+
+            <!-- Technology Stack as pills -->
+            <h2 style="font-size: 2.5rem; color: #d69053;"> Tech Stack</h2>
+            <div class="tech-stack">
+
+              <div class="tech-pill">
+                <img src="https://cryptologos.cc/logos/ethereum-eth-logo.png" class="tech-logo">
+                Solidity
+              </div>
+
+              <div class="tech-pill">
+                <img src="https://cryptologos.cc/logos/ethereum-eth-logo.png" class="tech-logo">
+                Ethereum
+              </div>
+
+              <div class="tech-pill">
+                <img src="https://trufflesuite.com/img/truffle-logo-dark.svg" class="tech-logo">
+                Truffle
+              </div>
+
+              <div class="tech-pill">
+                <img src="https://images.seeklogo.com/logo-png/42/1/ganache-logo-png_seeklogo-426724.png"
+                  class="tech-logo">
+                Ganache
+              </div>
+
+              <div class="tech-pill">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/6/6a/JavaScript-logo.png" class="tech-logo">
+                Web3.js
+              </div>
+
+            </div>
+          </div>
+
+          <!-- ====== APP PAGE (hidden by default, shown via class toggle) ====== -->
+          <div id="app-page">
+            <div class="app-panel">
+              <div id="loader">
+                <div class="spinner"></div>
+                <div class="loader-text">⚡ Initializing Blockchain ...</div>
+              </div>
+              <div id="content" style="display: none;">
+                <div class="form-block">
+                  <label class="form-label"><i class="fa-regular fa-pen-to-square"></i> Create New Quest</label>
+                  <form onsubmit="App.createTask(); return false;">
+                    <div class="input-group">
+                      <input id="newTask" type="text" placeholder="What's your next objective?" required
+                        autocomplete="off">
+                      <button type="submit" class="btn-create"><i class="fa-regular fa-plus"></i> Create</button>
+                    </div>
+                  </form>
+                </div>
+
+                <div class="tasks-section-title">🔥 Active Quests</div>
+                <div class="tasks-list" id="taskList">
+                  <div class="empty-state"><span style="font-size:3rem;">📋</span>
+                    <p>No active quests yet. Start your journey!</p>
+                  </div>
+                </div>
+
+                <div class="tasks-section-title">✅ Completed Quests</div>
+                <div class="tasks-list" id="completedTaskList">
+                  <div class="empty-state"><span style="font-size:3rem;">✨</span>
+                    <p>Your legendary completed quests appear here</p>
+                  </div>
+                </div>
+
+                <template id="taskTemplate">
+                  <div class="task-item">
+                    <input type="checkbox" class="task-checkbox">
+                    <span class="task-content"></span>
+                  </div>
+                </template>
+              </div>
+            </div>
+          </div>
+
+        </div> <!-- /.screen -->
+      </div> <!-- /.inner-crt -->
+    </div> <!-- /.monitor-frame -->
+  </div> <!-- /.rustic-wrapper -->
+
+  <!-- Your original app.js -->
+  <script src="app.js"></script>
+
+  <!-- Fix page navigation and initialization -->
+  <script>
+    (function () {
+      // Store original goToApp if it exists
+      const originalGoToApp = window.App?.goToApp;
+      const originalGoToLanding = window.App?.goToLanding;
+
+      // Override navigation to properly show/hide pages
+      window.App = window.App || {};
+      
+      window.App.goToApp = async function () {
+        console.log('🚀 Navigating to app...');
+        
+        // Add class to body to show app page
+        document.body.classList.add('showing-app');
+        
+        // Scroll to top
+        window.scrollTo(0, 0);
+        
+        // Initialize app if not already initialized
+        if (!window.App.account) {
+          console.log('📱 Account not found, loading...');
+          await window.App.load();
+        } else {
+          // Just render if account already exists
+          await window.App.render();
+        }
+      };
+
+      window.App.goToLanding = function () {
+        console.log('🏠 Navigating to landing...');
+        
+        // Remove class to show landing page
+        document.body.classList.remove('showing-app');
+        
+        // Scroll to top
+        window.scrollTo(0, 0);
+      };
+
+      // Setup click handlers for logo/brand to go back to landing
+      document.addEventListener('DOMContentLoaded', function () {
+        const brandHome = document.getElementById('brandHome');
+        const homeLink = document.getElementById('homeLink');
+        
+        if (brandHome) {
+          brandHome.addEventListener('click', function () {
+            window.App.goToLanding();
+          });
+        }
+        
+        if (homeLink) {
+          homeLink.addEventListener('click', function () {
+            window.App.goToLanding();
+          });
+        }
+
+        console.log('✅ Page navigation initialized');
+      });
+
+      console.log('✅ App navigation overrides applied');
+    })();
+  </script>
+
+</body>
+
+</html>
