@@ -1,3 +1,10 @@
+<p align="center">
+  <img src="https://upload.wikimedia.org/wikipedia/commons/6/6f/Ethereum-icon-purple.svg" alt="Ethereum Logo" width="80"/>
+  <img src="https://img.logo.dev/metamaskgrants.org?token=live_6a1a28fd-6420-4492-aeb0-b297461d9de2&size=128&retina=false&format=png&theme=dark" alt="MetaMask Logo" width="80"/>
+  <img src="https://not-lain-background-removal.hf.space/gradio_api/file=/tmp/gradio/78658d854db2e1346dbc1adc8f6af67833a356ec7159a75524e3c8a8bc1a4ab0/image.png" alt="Solidity Logo" width="80"/>
+</p>
+
+
 # **Task2Do - Ethereum Smart Contract Deployment**
 
 > **v3.0** - Successfully deployed on Sepolia ETH testnet
