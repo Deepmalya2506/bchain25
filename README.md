@@ -29,11 +29,6 @@ Task2Do is a Solidity-based smart contract project for Ethereum blockchain devel
 
 ## 📦 Project Structure
 
-# File Tree: eth-todo-list
-
-**Generated:** 2/28/2026, 4:00:28 PM
-**Root Path:** `c:\Users\DEEPMALYA\OneDrive\Desktop\pip_Malya\Blockchain\eth-todo-list`
-
 ```
 ├── 📁 contracts
 │   ├── 📄 Migrations.sol
