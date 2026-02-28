@@ -6,14 +6,14 @@ App = {
   // ==================== PAGE NAVIGATION ====================
   goToApp: async () => {
     console.log('🚀 Navigating to app...')
-    
+
     // Set body class to show app page
     document.body.classList.add('showing-app')
     App.currentPage = 'app'
-    
+
     // Scroll to top
     window.scrollTo(0, 0)
-    
+
     // Initialize app if not already initialized
     if (!App.account) {
       console.log('📱 Loading blockchain...')
@@ -26,18 +26,18 @@ App = {
 
   goToLanding: () => {
     console.log('🏠 Navigating to landing...')
-    
+
     // Remove body class to show landing page
     document.body.classList.remove('showing-app')
     App.currentPage = 'landing'
-    
+
     // Scroll to top
     window.scrollTo(0, 0)
   },
 
   connectWallet: async () => {
     console.log('🔐 Connecting wallet...')
-    
+
     if (typeof window.ethereum === 'undefined') {
       console.error('❌ MetaMask not installed')
       alert('MetaMask not detected. Installing MetaMask...')
@@ -66,13 +66,13 @@ App = {
         .show()
 
       console.log('✅ MetaMask Connected:', App.account)
-      
+
       // Setup event listeners
       App.setupMetaMaskListeners()
-      
+
       // Load contract for later use
       await App.loadContract()
-      
+
       alert('Wallet connected successfully! Click "Launch App" to begin.')
 
     } catch (error) {
@@ -87,7 +87,7 @@ App = {
 
   setupMetaMaskListeners: () => {
     console.log('🎧 Setting up MetaMask listeners...')
-    
+
     if (window.ethereum) {
       window.ethereum.on('accountsChanged', (accounts) => {
         console.log('🔄 Account changed:', accounts)
@@ -116,6 +116,15 @@ App = {
   load: async () => {
     console.log('🚀 Starting BlockTodo DApp...')
     try {
+      if (typeof window.ethereum === 'undefined') {
+        throw new Error('MetaMask not detected')
+      }
+
+      // Initialize web3 if not already initialized
+      if (!window.web3) {
+        window.web3 = new Web3(window.ethereum)
+      }
+
       await App.loadAccount()
       await App.loadContract()
       await App.render()
@@ -148,14 +157,14 @@ App = {
     try {
       console.log('📥 Fetching TodoList.json...')
       const response = await fetch('TodoList.json')
-      
+
       if (!response.ok) {
         throw new Error(
           `Failed to fetch TodoList.json: ${response.status}. ` +
           'Run: truffle migrate --reset --network development'
         )
       }
-      
+
       const todoListArtifact = await response.json()
       console.log('✅ TodoList.json loaded')
 
@@ -165,14 +174,31 @@ App = {
       }
 
       // Get network ID
-      const networkId = await web3.eth.net.getId()
-      console.log('🌐 Network ID:', networkId)
+      const chainId = await window.ethereum.request({ method: 'eth_chainId' })
+
+      if (chainId !== '0xaa36a7') {
+        try {
+          await window.ethereum.request({
+            method: 'wallet_switchEthereumChain',
+            params: [{ chainId: '0xaa36a7' }]
+          })
+        } catch (switchError) {
+          throw new Error('Please switch MetaMask to Sepolia network.')
+        }
+      }
+
+      const networkId = 11155111
+
+      // Force Sepolia
+      if (networkId !== 11155111) {
+        throw new Error('Please switch MetaMask to Sepolia network.')
+      }
 
       // Get contract address
       if (!todoListArtifact.networks || !todoListArtifact.networks[networkId]) {
         throw new Error(
           `Contract not deployed on network ${networkId}. ` +
-          'Run: truffle migrate --reset --network development'
+          'Run: truffle migrate --reset --network sepolia'
         )
       }
 
@@ -425,7 +451,7 @@ App = {
   // ==================== UI STATE MANAGEMENT ====================
   setLoading: (boolean) => {
     App.loading = boolean
-    
+
     if (boolean) {
       console.log('⏳ Loading...')
       $('#loader').show()
